@@ -19,6 +19,7 @@ type Image struct {
 	Path string
 	Domain string
 	Upstream string
+	Filename string
 	Mime string
 	Dpr float64
 	Width int
@@ -150,21 +151,22 @@ func (i *Image) getOrigCacheKey() string {
 	return fmt.Sprintf("%s/%s", i.Domain, i.Path)
 }
 
-func (i *Image) Write(w io.Writer) {
+func (i *Image) Write() {
 
-	if(i.Image == nil) {
-		log.Error(fmt.Sprintf("Image is nil: %s", i))
-		return
-	}
+	// @todo Figure out file name here. We're writing to a file.
+
+	// @todo Set compression level accordingly with DPR
+	quality := int(100 - i.Dpr * 25)
 
 	// Get the type.
 	switch {
 	case i.Mime == "image/jpeg":
-		jpeg.Encode(w, i.Image, nil)
+		jpeg.Encode(w, i.Image, &jpeg.Options{ Quality: quality })
 	case i.Mime == "image/png":
+		// @todo Set the compression level
 		png.Encode(w, i.Image)
 	case i.Mime == "image/webp":
-		webp.Encode(w, i.Image, nil)
+		webp.Encode(w, i.Image, &webp.Options{ Lossless: true, Quality: float32(quality)})
 	case i.Mime == "image/gif":
 		gif.Encode(w, i.Image, nil)
 	}

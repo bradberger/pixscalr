@@ -1,3 +1,12 @@
+## Design
+
+### Scaling
+
+Where should cached images be stored?
+
+- In memory cache (tempfs)
+- Some kind of network file system
+- On local server itself
 
 ## Options ##
 

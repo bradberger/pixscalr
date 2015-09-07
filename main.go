@@ -9,12 +9,52 @@ import (
   log "gopkg.in/inconshreveable/log15.v2"
 )
 
+type Request struct {
+   ResultChan chan string
+   ResponseWriter http.ResponseWriter
+   Request *http.Request
+}
+
+type Server struct {
+    Requests chan *Request
+}
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+  request := &Request{ ResultChan: make(chan string) }
+  s.Requests <- request
+  path := <-request.ResultChan // this blocks
+  serveImgCtrl(w, r, path)
+}
+
+func WorkerPool(n int) chan *Request {
+
+    requests := make(chan *Request)
+    for i:=0; i<n; i++ {
+        go Worker(requests)
+    }
+
+    return requests
+}
+
+func Worker(requests chan *Request) {
+    for req := range requests {
+      // Get the image/process it here. The result should be sent back through the channel.
+      // When it's done, we can just serve the file.
+      // @todo Change image processing to return path string.
+
+      req.ResultChan <- "done"
+    }
+}
+
 func main() {
 
   http.HandleFunc("/", serveImgCtrl)
 
+  requests := WorkerPool(5)
+  server := &Server{Requests: requests}
+
   log.Info("Starting server on :3000")
-  log.Crit(fmt.Sprintf("Server died %s", http.ListenAndServe(":3000", nil)))
+  log.Crit(fmt.Sprintf("Server died %s", http.ListenAndServe(":3000", server)))
 
 }
 
@@ -63,9 +103,6 @@ func serveImgCtrl(w http.ResponseWriter, r *http.Request) {
   }
 
   defer img.Log()
-
-  w.Header().Set("Content-Type", img.Mime)
-  w.Header().Set("Content-DPR", fmt.Sprintf("%v", dpr))
 
   img.Write(w)
 
