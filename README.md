@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ## Static CDN
 
 Static resources are served via 6 CDN's. The first response
@@ -16,6 +17,9 @@ The
 ## Responsive Images
 
 ### Headers/Parameters ###
+=======
+## Headers/Parameters ##
+>>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
 
 This section defines the headers that will be parsed and reacted on
 accordingly. The server will be fully compatible with Client hints
@@ -29,22 +33,38 @@ options can also be set using a `GET` parameter:
  - `?viewport-width=100`
  - `?downlink=0.384`
 
+<<<<<<< HEAD
 #### `Width` ####
+=======
+### `Width` ###
+>>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
 
 Per the Chrome spec, the preferred method for defining the requested
 width of the image is the `Width` header.
 
+<<<<<<< HEAD
 #### `Downlink` ####
 
 Adjusts the compression of the image based on the Downlink speed.
 
 #### `Accept` ####
+=======
+### `Downlink` ###
+
+Adjusts the compression of the image based on the Downlink speed.
+
+### `Accept` ###
+>>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
 
 To support Chrome and WebP, the Accept header is the definitive
 way to set the Content-Type of the returned image. This is the only thing
 that can not be set via a `GET` parameter as it would be pointless.
 
+<<<<<<< HEAD
 #### `DPR` ####
+=======
+### `DPR` ###
+>>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
 
 DPR is supported. The literal size of the image returned will be `<width> * <dpr>`
 
@@ -53,6 +73,7 @@ DPR allows for more compression before noticeable degradation.
 
 @todo Needs source
 
+<<<<<<< HEAD
 #### `Viewport-Width` ####
 
 This is used right now to ensure that an image's width is never greater
@@ -61,6 +82,16 @@ than the viewport-width.
 @todo Think there are other things to do with it. Need to check that out.
 
 ### Response Headers ###
+=======
+### `Viewport-Width` ###
+
+This is used right now to ensure that an image's width is never greater
+than the viewport-width.
+
+@todo Think there are other things to do with it. Need to check that out.
+
+## Response Headers
+>>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
 
 The server will set the `Vary` response header:
 
