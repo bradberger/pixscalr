@@ -1,4 +1,12 @@
-<<<<<<< HEAD
+## Configuration/Command Line Options
+
+- `--listen` A ip/hostname and port combo, like `127.0.0.1:3000` or `:3000`
+- `--cache` Boolean whether to use file cache.
+- `--cache-dir` The directory to cache downloaded files in. Only works if `--cache` is enabled.
+- `--prefix-cdn` The prefix for serving cdn content.
+- `--prefix-img` The prefix for serving external images.
+
+
 ## Static CDN
 
 Static resources are served via 6 CDN's. The first response
@@ -11,15 +19,9 @@ is used:
 - [Yandex](https://tech.yandex.ru/jslibs/)
 - [Microsoft Ajax CDN](http://www.asp.net/ajax/cdn)
 
-The
-
-
 ## Responsive Images
 
 ### Headers/Parameters ###
-=======
-## Headers/Parameters ##
->>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
 
 This section defines the headers that will be parsed and reacted on
 accordingly. The server will be fully compatible with Client hints
@@ -33,38 +35,23 @@ options can also be set using a `GET` parameter:
  - `?viewport-width=100`
  - `?downlink=0.384`
 
-<<<<<<< HEAD
 #### `Width` ####
-=======
-### `Width` ###
->>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
 
 Per the Chrome spec, the preferred method for defining the requested
 width of the image is the `Width` header.
 
-<<<<<<< HEAD
 #### `Downlink` ####
 
 Adjusts the compression of the image based on the Downlink speed.
 
+
 #### `Accept` ####
-=======
-### `Downlink` ###
-
-Adjusts the compression of the image based on the Downlink speed.
-
-### `Accept` ###
->>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
 
 To support Chrome and WebP, the Accept header is the definitive
 way to set the Content-Type of the returned image. This is the only thing
 that can not be set via a `GET` parameter as it would be pointless.
 
-<<<<<<< HEAD
 #### `DPR` ####
-=======
-### `DPR` ###
->>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
 
 DPR is supported. The literal size of the image returned will be `<width> * <dpr>`
 
@@ -73,7 +60,7 @@ DPR allows for more compression before noticeable degradation.
 
 @todo Needs source
 
-<<<<<<< HEAD
+
 #### `Viewport-Width` ####
 
 This is used right now to ensure that an image's width is never greater
@@ -81,23 +68,6 @@ than the viewport-width.
 
 @todo Think there are other things to do with it. Need to check that out.
 
-### Response Headers ###
-=======
-### `Viewport-Width` ###
-
-This is used right now to ensure that an image's width is never greater
-than the viewport-width.
-
-@todo Think there are other things to do with it. Need to check that out.
-
-## Response Headers
->>>>>>> 906b1e6c7012bd8558d5bd32f4df827cf01cff2a
-
-The server will set the `Vary` response header:
-
-```
-Vary: Accept, DPR, Width, Save-Data, Downlink
-```
 
 #### References ####
 
@@ -107,66 +77,7 @@ Vary: Accept, DPR, Width, Save-Data, Downlink
 - [http://ivomynttinen.com/blog/a-guide-for-creating-a-better-retina-web/](http://ivomynttinen.com/blog/a-guide-for-creating-a-better-retina-web/)
 
 
-
-
-The server will set the `Vary` response header:
-
-```
-Vary: Accept, DPR, Width
-```
-
-#### References ####
-
-- None, yet.
-
-- [Automating resource selection with Client Hints](https://developers.google.com/web/updates/2015/09/automating-resource-selection-with-client-hints)
-
-## Request parameters
-
-This section defines the request parameters available for client side
-requests to use/send.  
-
-### Width ###
-
-Same implementation as the `Viewport-Width` header, just for clients that
-don't send the header.
-
-#### Ways to Set It ####
-
-- `width` The `width` query parameter will set width if header information is
-  not available.
-
-- `/<w>/path/to/image` If the first value here is numeric, it will become the
-  request width for the image. This is to allow better caching upstream by
-  caching proxies, and services such as CloudFlare, which may ignore query
-  parameters.
-
-### Viewport-Width ###
-
-Same implementation as the `Viewport-Width` header, just for clients that
-don't send the header.
-
-### DPR ###
-
-Same implementation as the `DPR` header, just for clients that don't send
-the header.
-
-### Caching ###
-
-This section defines the caching process.
-
-### Formats ###
-
-This section defines the various formats that will be available.
-
-- WebP (preferred)
-- JPEG
-- PNG
-- GIF
-- TIFF (read-only, never served)
-
-
-### Compression ###
+### Quality ###
 
 In combination with both format and `DPR` the compression levels should be
 variable to produce the best quality image which uses the lowest amount of
