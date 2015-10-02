@@ -20,6 +20,15 @@ import (
 	"path"
 )
 
+func cdnHeaders(w *http.ResponseWriter, r *http.Request) {
+	if origin := r.Header.Get("Origin"); origin != "" {
+		(*w).Header().Set("Access-Control-Allow-Origin", origin)
+		(*w).Header().Set("Timing-Allow-Origin", origin)
+		(*w).Header().Set("Access-Control-Allow-Methods", r.Method)
+		(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding")
+	}
+}
+
 func imgHeaders(w *http.ResponseWriter, r *http.Request) {
 	cdnHeaders(w, r)
 	(*w).Header().Set("Accept-CH", "DPR, Width, Viewport-Width, Downlink")
