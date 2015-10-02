@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/mailgun/log"
 	"io/ioutil"
+	"mime"
 	"net/http"
-	"os"
 	"path"
 	"strings"
 	"time"
 )
 
-// File is a struct which contains necessary information regarding a static file.
+// CDNFile is a struct which contains necessary information regarding a static file.
 // The related methods allow for fetching and serving that file via various CDN's.
-type File struct {
+type CDNFile struct {
 	Package   string
 	Version   string
 	Path      string
@@ -21,19 +22,19 @@ type File struct {
 	Mime      string
 }
 
-// FileQueryResult holds data related to a file lookup.
+// CDNQuery holds data related to a file lookup.
 // This includes where it came from, it's size, contents, etc.
-type FileQueryResult struct {
+type CDNQuery struct {
 	StausCode int
 	Cached    bool
-	Url       string
+	URL       string
 	Path      string
 	Bytes     []byte
 	Size      int
 	Duration  time.Duration
 }
 
-func (f *File) getCdnjsURL() (url string) {
+func (f *CDNFile) getCdnjsURL() (url string) {
 	if f.Package == "" || f.Version == "" || f.Path == "" {
 		url = ""
 		return
@@ -42,7 +43,7 @@ func (f *File) getCdnjsURL() (url string) {
 	return
 }
 
-func (f *File) getJsDelivrURL() (url string) {
+func (f *CDNFile) getJsDelivrURL() (url string) {
 	if f.Package == "" || f.Version == "" || f.Path == "" {
 		url = ""
 		return
@@ -51,7 +52,7 @@ func (f *File) getJsDelivrURL() (url string) {
 	return
 }
 
-func (f *File) getGoogleApisURL() (url string) {
+func (f *CDNFile) getGoogleApisURL() (url string) {
 	if f.Package == "" || f.Version == "" || f.Path == "" {
 		url = ""
 		return
@@ -60,7 +61,7 @@ func (f *File) getGoogleApisURL() (url string) {
 	return
 }
 
-func (f *File) getAspNetURL() (url string) {
+func (f *CDNFile) getAspNetURL() (url string) {
 	if f.Package == "" || f.Version == "" || f.Path == "" {
 		url = ""
 		return
@@ -77,7 +78,7 @@ func (f *File) getAspNetURL() (url string) {
 	return
 }
 
-func (f *File) getYandexURL() (url string) {
+func (f *CDNFile) getYandexURL() (url string) {
 	if f.Package == "" || f.Version == "" || f.Path == "" {
 		url = ""
 		return
@@ -86,7 +87,7 @@ func (f *File) getYandexURL() (url string) {
 	return
 }
 
-func (f *File) getOssCdnURL() (url string) {
+func (f *CDNFile) getOssCdnURL() (url string) {
 	if f.Package == "" || f.Version == "" || f.Path == "" {
 		url = ""
 		return
@@ -96,7 +97,7 @@ func (f *File) getOssCdnURL() (url string) {
 }
 
 // GetUrls returns a set of possible locations for each file based on available CDNs.
-func (f *File) GetUrls() []string {
+func (f *CDNFile) GetUrls() []string {
 	return []string{
 		f.getCdnjsURL(),
 		f.getJsDelivrURL(),
@@ -107,14 +108,14 @@ func (f *File) GetUrls() []string {
 	}
 }
 
-func (f *File) getCachePath() (path string) {
+func (f *CDNFile) getCachePath() (path string) {
 	path = fmt.Sprintf("%s/cdn/%s/%s/%s", tmpDir, f.Package, f.Version, f.Path)
 	return
 }
 
-func getUrl(url string) <-chan FileQueryResult {
+func getURL(url string) <-chan CDNQuery {
 
-	out := make(chan FileQueryResult, 1)
+	out := make(chan CDNQuery, 1)
 	go func() {
 
 		if url == "" {
@@ -140,9 +141,9 @@ func getUrl(url string) <-chan FileQueryResult {
 		}
 
 		elapsed := time.Since(start)
-		out <- FileQueryResult{
+		out <- CDNQuery{
 			Cached:   false,
-			Url:      url,
+			URL:      url,
 			Bytes:    body,
 			Size:     len(body),
 			Duration: elapsed,
@@ -157,39 +158,22 @@ func getUrl(url string) <-chan FileQueryResult {
 }
 
 // CacheToDisk writes the content to disk.
-func (f *File) CacheToDisk(content []byte) (err error) {
-
-	if len(content) < 0 {
-		return
-	}
-
-	fn := f.getCachePath()
-	dir := path.Dir(fn)
-
-	// Create the directory.
-	err = os.MkdirAll(dir, os.FileMode(0775))
-	if err != nil {
-		return
-	}
-
-	// Write the file
-	err = ioutil.WriteFile(fn, content, 0644)
-	return
-
+func (f *CDNFile) CacheToDisk(content []byte) {
+	cacheFile(f.getCachePath(), content)
 }
 
 // Query returns the file contents in []byte for each file.
 // It loops through the possible file URL's, and returns the first result.
 // URL's which have errors, don't exist, etc., block forever.
-func (f *File) Query() <-chan FileQueryResult {
+func (f *CDNFile) Query() <-chan CDNQuery {
 
 	urls := f.GetUrls()
-	out := make(chan FileQueryResult, len(urls))
+	out := make(chan CDNQuery, len(urls))
 
 	go func() {
-		contents, err := ioutil.ReadFile(f.getCachePath())
+		contents, err := ioutil.ReadFile(path.Clean(f.getCachePath()))
 		if err == nil {
-			out <- FileQueryResult{
+			out <- CDNQuery{
 				Cached: true,
 				Path:   f.getCachePath(),
 				Bytes:  contents,
@@ -200,18 +184,12 @@ func (f *File) Query() <-chan FileQueryResult {
 			haveResult := false
 			for _, url := range urls {
 				go func(uri string) {
-					r := <-getUrl(uri)
+					r := <-getURL(uri)
 					if !haveResult {
 						// First hit, cache it.
 						haveResult = true
-						if useFileCache {
-							if err := f.CacheToDisk(r.Bytes); err != nil {
-								log.Errorf("Failed to cache file %s: %s", f.getCachePath(), err)
-							}
-
-						}
+						f.CacheToDisk(r.Bytes)
 					}
-
 					out <- r
 				}(url)
 			}
@@ -220,4 +198,48 @@ func (f *File) Query() <-chan FileQueryResult {
 
 	return out
 
+}
+
+func cdnHandler(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	ext := path.Ext(r.URL.Path)
+
+	f := CDNFile{
+		Package:   vars["package"],
+		Version:   vars["version"],
+		Path:      vars["path"],
+		Extension: ext,
+		Mime:      mime.TypeByExtension(ext),
+	}
+
+	incoming := f.Query()
+	timeout := make(chan bool, 1)
+	go func() {
+		time.Sleep(5 * time.Second)
+		timeout <- true
+	}()
+
+	cdnHeaders(&w, r)
+	w.Header().Set("Content-Type", f.Mime)
+
+	select {
+	case res := <-incoming:
+		if res.Cached {
+			log.Infof("CACHE %s", res.Path)
+		} else {
+			log.Infof("FETCH %s %s", res.Duration, res.URL)
+		}
+		w.Write(res.Bytes)
+		return
+	case <-timeout:
+		http.Error(w, http.StatusText(504), 504)
+		return
+	}
+}
+
+func cdnHeaders(w *http.ResponseWriter, r *http.Request) {
+	disableCORSHeaders(w, r)
+	(*w).Header().Set("X-Powered-By", fmt.Sprintf("GoFaster %s", version))
+	(*w).Header().Set("Cache-Control:public", "max-age=31536000")
 }
